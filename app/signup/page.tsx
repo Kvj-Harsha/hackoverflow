@@ -53,6 +53,10 @@ export default function SignUp() {
 
     try {
       if (role === "Admin") {
+        if (!collegeName) {
+          setError("College name is required.");
+          return;
+        }
         const instituteDocRef = doc(db, "institutes", collegeName);
         const instituteSnapshot = await getDoc(instituteDocRef);
 
