@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
+import { db } from "@/lib/firebase"; // Ensure the Firebase configuration is in the correct path.
 import {
   collection,
   getDocs,
@@ -12,7 +12,6 @@ import {
   OrderByDirection,
 } from "firebase/firestore";
 
-// Define JobPost and Application types
 type JobPost = {
   id: string;
   title: string;
@@ -134,7 +133,10 @@ export default function StudentDashboard({ studentId }: { studentId: string }) {
           {jobPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {jobPosts.map((job) => (
-                <div key={job.id} className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div
+                  key={job.id}
+                  className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+                >
                   <h3 className="text-xl font-semibold text-gray-800 mb-2">{job.title}</h3>
                   <p className="text-gray-600 mb-4">{job.description}</p>
                   <p className="text-sm text-gray-500 mb-4">
@@ -170,7 +172,10 @@ export default function StudentDashboard({ studentId }: { studentId: string }) {
           {applications.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {applications.map((app) => (
-                <div key={app.id} className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div
+                  key={app.id}
+                  className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+                >
                   <h3 className="text-xl font-semibold text-gray-800 mb-2">
                     Job ID: {app.jobId}
                   </h3>
