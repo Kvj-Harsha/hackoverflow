@@ -1,10 +1,9 @@
-"use client"
+"use client";
 import { useState, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 
-// Define a type for form data
 interface FormData {
   email: string;
   name?: string;
@@ -13,12 +12,11 @@ interface FormData {
   adminName?: string;
   phone: string;
   age?: string;
-  campusName?: string;
   companyName?: string;
-  instituteIDs?: string[];
-  posts?: string[];
+  instituteID?: string; // for student role
   password?: string;
   confirmPassword?: string;
+  studentName?: string; // for student role
 }
 
 export default function SignUp() {
@@ -26,7 +24,7 @@ export default function SignUp() {
   const [formData, setFormData] = useState<FormData>({
     email: "",
     phone: "",
-    collegeName: "", // Ensure collegeName is included in the state
+    collegeName: "",
     password: "",
     confirmPassword: "",
   });
@@ -41,78 +39,75 @@ export default function SignUp() {
   const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const { email, collegeName, password, confirmPassword, campusName, ...rest } = formData;
+    const { email, collegeName, password, confirmPassword, studentName, instituteID, ...rest } = formData;
 
-    // Ensure that the collegeName is not empty for Admin role
     if (role === "Admin" && !collegeName) {
       setError("College name is required.");
       return;
     }
 
-    // Ensure passwords match
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
 
     try {
-      // Handle Admin role
       if (role === "Admin") {
-        if (!collegeName) {
-          setError("College name is required for Admin.");
-          return;
-        }
-
         const instituteDocRef = doc(db, "institutes", collegeName);
         const instituteSnapshot = await getDoc(instituteDocRef);
 
         let instituteID;
 
-        // If the college exists, use the existing ID
         if (instituteSnapshot.exists()) {
           instituteID = instituteSnapshot.data()?.instituteID;
         } else {
-          // Otherwise, generate a new ID
           instituteID = Math.floor(10000 + Math.random() * 90000);
           await setDoc(instituteDocRef, { instituteID, name: collegeName });
         }
 
-        // Store admin data with the college's institute ID
         if (email) {
           await setDoc(doc(db, "admins", email), { ...rest, email, instituteID, role, password });
         }
       } else if (role === "Recruiter") {
-        const { companyName, instituteIDs, posts, password, ...rest } = formData;
-
         if (email) {
-          await setDoc(doc(db, "recruiters", email), { ...rest, email, companyName, instituteIDs, posts, role, password });
+          await setDoc(doc(db, "recruiters", email), { ...rest, email, role, password, posts: "", instituteIDs: "" });
         }
       } else if (role === "Student") {
-        const { age, campusName, password, ...rest } = formData;
-
-        if (!campusName) {
-          setError("Campus name is required for Student.");
+        if (!instituteID) {
+          setError("Institute ID is required for Student.");
           return;
         }
 
-        const campusDocRef = doc(db, "institutes", campusName);
-        const campusSnapshot = await getDoc(campusDocRef);
+        // Corrected logic for verifying instituteID
+        const trimmedInstituteID = instituteID.trim(); // Ensure no extra spaces
+        const institutesRef = collection(db, "institutes");
 
-        if (!campusSnapshot.exists()) {
-          setError("Invalid campus name.");
+        // Ensure the correct data type matches the database
+        const q = query(institutesRef, where("instituteID", "==", Number(trimmedInstituteID) || trimmedInstituteID));
+        const instituteSnapshot = await getDocs(q);
+
+        if (instituteSnapshot.empty) {
+          setError("Invalid institute ID.");
           return;
         }
 
-        const instituteID = campusSnapshot.data()?.instituteID;
+        const instituteData = instituteSnapshot.docs[0].data();
+        const campusName = instituteData?.name;
 
         if (email) {
-          await setDoc(doc(db, "students", email), { ...rest, email, age, campusName, instituteID, role, password });
+          await setDoc(doc(db, "students", email), {
+            ...rest,
+            email,
+            instituteID: trimmedInstituteID,
+            role,
+            password,
+            collegeName: campusName,
+          });
         }
       } else {
         throw new Error("Invalid role selected");
       }
 
-      // Redirect to the admin page
       router.push("/admin");
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -142,7 +137,6 @@ export default function SignUp() {
         </div>
 
         <form onSubmit={handleSignUp} className="space-y-6">
-          {/* Render Admin-specific fields */}
           {role === "Admin" && (
             <>
               <div>
@@ -152,7 +146,7 @@ export default function SignUp() {
                   name="collegeName"
                   className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   onChange={handleInputChange}
-                  value={formData.collegeName}  
+                  value={formData.collegeName}
                   required
                 />
               </div>
@@ -179,56 +173,27 @@ export default function SignUp() {
             </>
           )}
 
-          {/* Render Recruiter-specific fields */}
-          {role === "Recruiter" && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-black">Company Name</label>
-                <input
-                  type="text"
-                  name="companyName"
-                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  onChange={handleInputChange}
-                  value={formData.companyName}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-black">Institute IDs</label>
-                <input
-                  type="text"
-                  name="instituteIDs"
-                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  onChange={handleInputChange}
-                  value={formData.instituteIDs?.join(", ")}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-black">Posts</label>
-                <input
-                  type="text"
-                  name="posts"
-                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  onChange={handleInputChange}
-                  value={formData.posts?.join(", ")}
-                  required
-                />
-              </div>
-            </>
-          )}
-
-          {/* Render Student-specific fields */}
           {role === "Student" && (
             <>
               <div>
-                <label className="block text-sm font-medium text-black">Campus Name</label>
+                <label className="block text-sm font-medium text-black">Student Name</label>
                 <input
                   type="text"
-                  name="campusName"
+                  name="studentName"
                   className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   onChange={handleInputChange}
-                  value={formData.campusName}
+                  value={formData.studentName}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-black">Institute ID</label>
+                <input
+                  type="text"
+                  name="instituteID"
+                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  onChange={handleInputChange}
+                  value={formData.instituteID}
                   required
                 />
               </div>
@@ -253,7 +218,7 @@ export default function SignUp() {
               name="email"
               className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
               onChange={handleInputChange}
-              value={formData.email}  
+              value={formData.email}
               required
             />
           </div>
