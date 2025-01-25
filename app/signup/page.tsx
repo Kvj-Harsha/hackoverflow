@@ -53,11 +53,7 @@ export default function SignUp() {
 
     try {
       if (role === "Admin") {
-        if (!collegeName) {
-          setError("College name is required.");
-          return;
-        }
-        const instituteDocRef = doc(db, "institutes", collegeName);
+        const instituteDocRef = doc(db, "institutes", collegeName || "");
         const instituteSnapshot = await getDoc(instituteDocRef);
 
         let instituteID;
@@ -72,21 +68,24 @@ export default function SignUp() {
         if (email) {
           await setDoc(doc(db, "admins", email), { ...rest, email, instituteID, role, password });
         }
+
+        router.push("/admin"); // Redirect to admin page
+
       } else if (role === "Recruiter") {
         if (email) {
           await setDoc(doc(db, "recruiters", email), { ...rest, email, role, password, posts: "", instituteIDs: "" });
         }
+
+        router.push("/recruiter"); // Redirect to recruiter page
+
       } else if (role === "Student") {
         if (!instituteID) {
           setError("Institute ID is required for Student.");
           return;
         }
 
-        // Corrected logic for verifying instituteID
         const trimmedInstituteID = instituteID.trim(); // Ensure no extra spaces
         const institutesRef = collection(db, "institutes");
-
-        // Ensure the correct data type matches the database
         const q = query(institutesRef, where("instituteID", "==", Number(trimmedInstituteID) || trimmedInstituteID));
         const instituteSnapshot = await getDocs(q);
 
@@ -108,11 +107,11 @@ export default function SignUp() {
             collegeName: campusName,
           });
         }
+
+        router.push("/student"); // Redirect to student page
       } else {
         throw new Error("Invalid role selected");
       }
-
-      router.push("/admin");
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message || "Sign-up failed. Please try again.");
