@@ -41,12 +41,12 @@ export default function SignUp() {
   const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const { email, collegeName, password, confirmPassword, ...rest } = formData;
+    const { email, collegeName, password, confirmPassword, campusName, ...rest } = formData;
 
-    // Ensure that the collegeName is not empty
-    if (!collegeName) {
-      setError("College name is required."); // Set error message
-      return; // Stop further execution
+    // Ensure that the collegeName is not empty for Admin role
+    if (role === "Admin" && !collegeName) {
+      setError("College name is required.");
+      return;
     }
 
     // Ensure passwords match
@@ -58,6 +58,11 @@ export default function SignUp() {
     try {
       // Handle Admin role
       if (role === "Admin") {
+        if (!collegeName) {
+          setError("College name is required for Admin.");
+          return;
+        }
+
         const instituteDocRef = doc(db, "institutes", collegeName);
         const instituteSnapshot = await getDoc(instituteDocRef);
 
@@ -73,13 +78,36 @@ export default function SignUp() {
         }
 
         // Store admin data with the college's institute ID
-        await setDoc(doc(db, "admins", email), { ...rest, email, instituteID, role, password });
+        if (email) {
+          await setDoc(doc(db, "admins", email), { ...rest, email, instituteID, role, password });
+        }
       } else if (role === "Recruiter") {
-        const { email, ...rest } = formData;
-        await setDoc(doc(db, "recruiters", email), { ...rest, email, role, password });
+        const { companyName, instituteIDs, posts, password, ...rest } = formData;
+
+        if (email) {
+          await setDoc(doc(db, "recruiters", email), { ...rest, email, companyName, instituteIDs, posts, role, password });
+        }
       } else if (role === "Student") {
-        const { email, ...rest } = formData;
-        await setDoc(doc(db, "students", email), { ...rest, email, role, password });
+        const { age, campusName, password, ...rest } = formData;
+
+        if (!campusName) {
+          setError("Campus name is required for Student.");
+          return;
+        }
+
+        const campusDocRef = doc(db, "institutes", campusName);
+        const campusSnapshot = await getDoc(campusDocRef);
+
+        if (!campusSnapshot.exists()) {
+          setError("Invalid campus name.");
+          return;
+        }
+
+        const instituteID = campusSnapshot.data()?.instituteID;
+
+        if (email) {
+          await setDoc(doc(db, "students", email), { ...rest, email, age, campusName, instituteID, role, password });
+        }
       } else {
         throw new Error("Invalid role selected");
       }
@@ -124,7 +152,7 @@ export default function SignUp() {
                   name="collegeName"
                   className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   onChange={handleInputChange}
-                  value={formData.collegeName}  // Ensure the value is bound to state
+                  value={formData.collegeName}  
                   required
                 />
               </div>
@@ -148,59 +176,126 @@ export default function SignUp() {
                   required
                 />
               </div>
+            </>
+          )}
+
+          {/* Render Recruiter-specific fields */}
+          {role === "Recruiter" && (
+            <>
               <div>
-                <label className="block text-sm font-medium text-black">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  onChange={handleInputChange}
-                  value={formData.email}  // Bind email to the state
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-black">Phone</label>
+                <label className="block text-sm font-medium text-black">Company Name</label>
                 <input
                   type="text"
-                  name="phone"
+                  name="companyName"
                   className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   onChange={handleInputChange}
-                  value={formData.phone}  // Bind phone to the state
+                  value={formData.companyName}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-black">Password</label>
+                <label className="block text-sm font-medium text-black">Institute IDs</label>
                 <input
-                  type="password"
-                  name="password"
+                  type="text"
+                  name="instituteIDs"
                   className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   onChange={handleInputChange}
-                  value={formData.password}
+                  value={formData.instituteIDs?.join(", ")}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-black">Confirm Password</label>
+                <label className="block text-sm font-medium text-black">Posts</label>
                 <input
-                  type="password"
-                  name="confirmPassword"
+                  type="text"
+                  name="posts"
                   className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   onChange={handleInputChange}
-                  value={formData.confirmPassword}
+                  value={formData.posts?.join(", ")}
                   required
                 />
               </div>
             </>
           )}
 
-          {/* Render other role-specific fields (Recruiter and Student) here */}
+          {/* Render Student-specific fields */}
+          {role === "Student" && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-black">Campus Name</label>
+                <input
+                  type="text"
+                  name="campusName"
+                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  onChange={handleInputChange}
+                  value={formData.campusName}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-black">Age</label>
+                <input
+                  type="number"
+                  name="age"
+                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  onChange={handleInputChange}
+                  value={formData.age}
+                  required
+                />
+              </div>
+            </>
+          )}
 
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          <div>
+            <label className="block text-sm font-medium text-black">Email</label>
+            <input
+              type="email"
+              name="email"
+              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              onChange={handleInputChange}
+              value={formData.email}  
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-black">Phone</label>
+            <input
+              type="text"
+              name="phone"
+              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              onChange={handleInputChange}
+              value={formData.phone}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-black">Password</label>
+            <input
+              type="password"
+              name="password"
+              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              onChange={handleInputChange}
+              value={formData.password}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-black">Confirm Password</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              onChange={handleInputChange}
+              value={formData.confirmPassword}
+              required
+            />
+          </div>
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
           <button
             type="submit"
-            className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
           >
             Sign Up
           </button>
