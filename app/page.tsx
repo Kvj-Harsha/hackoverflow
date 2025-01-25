@@ -8,8 +8,8 @@ export default function Home() {
       <header className="w-full py-6 px-8 flex justify-between items-center text-white">
         <h1 className="text-3xl font-extrabold">Placement Platform</h1>
         <nav className="space-x-4">
-          <Link href="/login" className="px-4 py-2 bg-white text-blue-600 rounded-lg shadow hover:bg-blue-100">
-            Log In
+          <Link href="/signin" className="px-4 py-2 bg-white text-blue-600 rounded-lg shadow hover:bg-blue-100">
+            Sign In
           </Link>
           <Link href="/signup" className="px-4 py-2 bg-yellow-400 text-blue-900 font-bold rounded-lg shadow hover:bg-yellow-300">
             Sign Up

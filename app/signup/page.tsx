@@ -17,6 +17,8 @@ interface FormData {
   companyName?: string;
   instituteIDs?: string[];
   posts?: string[];
+  password?: string;
+  confirmPassword?: string;
 }
 
 export default function SignUp() {
@@ -25,6 +27,8 @@ export default function SignUp() {
     email: "",
     phone: "",
     collegeName: "", // Ensure collegeName is included in the state
+    password: "",
+    confirmPassword: "",
   });
   const [error, setError] = useState("");
   const router = useRouter();
@@ -37,12 +41,18 @@ export default function SignUp() {
   const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const { email, collegeName, ...rest } = formData;
+    const { email, collegeName, password, confirmPassword, ...rest } = formData;
 
     // Ensure that the collegeName is not empty
     if (!collegeName) {
       setError("College name is required."); // Set error message
       return; // Stop further execution
+    }
+
+    // Ensure passwords match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
     }
 
     try {
@@ -63,13 +73,13 @@ export default function SignUp() {
         }
 
         // Store admin data with the college's institute ID
-        await setDoc(doc(db, "admins", email), { ...rest, email, instituteID, role });
+        await setDoc(doc(db, "admins", email), { ...rest, email, instituteID, role, password });
       } else if (role === "Recruiter") {
         const { email, ...rest } = formData;
-        await setDoc(doc(db, "recruiters", email), { ...rest, email, role });
+        await setDoc(doc(db, "recruiters", email), { ...rest, email, role, password });
       } else if (role === "Student") {
         const { email, ...rest } = formData;
-        await setDoc(doc(db, "students", email), { ...rest, email, role });
+        await setDoc(doc(db, "students", email), { ...rest, email, role, password });
       } else {
         throw new Error("Invalid role selected");
       }
@@ -152,11 +162,33 @@ export default function SignUp() {
               <div>
                 <label className="block text-sm font-medium text-black">Phone</label>
                 <input
-                  type="number"
+                  type="text"
                   name="phone"
                   className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   onChange={handleInputChange}
                   value={formData.phone}  // Bind phone to the state
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-black">Password</label>
+                <input
+                  type="password"
+                  name="password"
+                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  onChange={handleInputChange}
+                  value={formData.password}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-black">Confirm Password</label>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  onChange={handleInputChange}
+                  value={formData.confirmPassword}
                   required
                 />
               </div>
