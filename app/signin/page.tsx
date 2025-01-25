@@ -28,13 +28,13 @@ export default function SignIn() {
       // Redirect based on role
       switch (role) {
         case "Admin":
-          router.push("/admin-dashboard");
+          router.push("/admin");
           break;
         case "Student":
-          router.push("/student-dashboard");
+          router.push("/student");
           break;
         case "Recruiter":
-          router.push("/recruiter-dashboard");
+          router.push("/recruiter");
           break;
         default:
           throw new Error("Invalid role selected.");
