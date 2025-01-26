@@ -187,6 +187,39 @@ export default function AdminDashboard() {
             <p className="text-gray-600">No pending student approvals.</p>
           )}
         </div>
+
+        {/* Enrolled Students */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-700">Enrolled Students</h2>
+          {filteredStudents.length > 0 ? (
+            filteredStudents.map((student) => (
+              <div
+                key={student.id}
+                className="flex justify-between items-center mb-4 p-4 border border-gray-300 rounded-lg shadow-sm"
+              >
+                <div>
+                  <p className="text-lg font-medium text-gray-800">{student.name}</p>
+                  <p className="text-sm text-gray-600">{student.email}</p>
+                  <p
+                    className={`text-sm ${
+                      student.verified ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {student.verified ? "Verified" : "Not Verified"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => removeStudent(student.id)}
+                  className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-600">No enrolled students available.</p>
+          )}
+        </div>
       </div>
     </div>
   );

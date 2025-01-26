@@ -14,14 +14,14 @@ interface FormData {
   phone: string;
   age?: string;
   companyName?: string;
-  instituteID?: string; // for student role
+  instituteID?: string;
   password?: string;
   confirmPassword?: string;
-  studentName?: string; // for student role
+  studentName?: string;
 }
 
 export default function SignUp() {
-  const [role, setRole] = useState("Admin"); // Default to Admin for dynamic rendering
+  const [role, setRole] = useState("Admin");
   const [formData, setFormData] = useState<FormData>({
     email: "",
     phone: "",
@@ -34,12 +34,11 @@ export default function SignUp() {
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     const { email, collegeName, password, confirmPassword, studentName, instituteID, companyName, ...rest } = formData;
 
     if (role === "Admin" && !collegeName) {
@@ -54,23 +53,21 @@ export default function SignUp() {
 
     try {
       if (role === "Admin") {
-        const instituteDocRef = doc(db, "institutes", collegeName || "");
-        const instituteSnapshot = await getDoc(instituteDocRef);
-
+        const instituteRef = doc(db, "institutes", collegeName || "");
+        const instituteSnap = await getDoc(instituteRef);
         let instituteID;
 
-        if (instituteSnapshot.exists()) {
-          instituteID = instituteSnapshot.data()?.instituteID;
+        if (instituteSnap.exists()) {
+          instituteID = instituteSnap.data()?.instituteID;
         } else {
           instituteID = Math.floor(10000 + Math.random() * 90000);
-          await setDoc(instituteDocRef, { instituteID, name: collegeName });
+          await setDoc(instituteRef, { instituteID, name: collegeName });
         }
 
         if (email) {
           await setDoc(doc(db, "admins", email), { ...rest, email, instituteID, role, password });
         }
-
-        router.push("/admin"); // Redirect to admin page
+        router.push("/admin");
       } else if (role === "Recruiter") {
         if (!companyName) {
           setError("Company name is required for Recruiter.");
@@ -80,211 +77,149 @@ export default function SignUp() {
         if (email) {
           await setDoc(doc(db, "recruiters", email), { ...rest, email, companyName, role, password });
         }
-
-        router.push("/recruiter"); // Redirect to recruiter page
+        router.push("/recruiter");
       } else if (role === "Student") {
         if (!instituteID) {
-          setError("Institute ID is required for Student.");
+          setError("Institute ID is required.");
           return;
         }
 
-        const trimmedInstituteID = instituteID.trim(); // Ensure no extra spaces
-        const institutesRef = collection(db, "institutes");
-        const q = query(institutesRef, where("instituteID", "==", Number(trimmedInstituteID) || trimmedInstituteID));
-        const instituteSnapshot = await getDocs(q);
+        const instituteQuery = query(
+          collection(db, "institutes"),
+          where("instituteID", "==", Number(instituteID.trim()))
+        );
+        const instituteSnap = await getDocs(instituteQuery);
 
-        if (instituteSnapshot.empty) {
+        if (instituteSnap.empty) {
           setError("Invalid institute ID.");
           return;
         }
 
-        const instituteData = instituteSnapshot.docs[0].data();
-        const campusName = instituteData?.name;
-
+        const campusName = instituteSnap.docs[0].data().name;
         if (email) {
           await setDoc(doc(db, "students", email), {
             ...rest,
             email,
-            instituteID: trimmedInstituteID,
+            instituteID,
             role,
             password,
             collegeName: campusName,
           });
         }
-
-        router.push("/student"); // Redirect to student page
+        router.push("/student");
       } else {
         throw new Error("Invalid role selected");
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "Sign-up failed. Please try again.");
-      } else {
-        setError("Sign-up failed. Please try again.");
-      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign-up failed. Please try again.");
     }
   };
 
   return (
-    <div className="bg-gradient-to-b from-blue-600 to-blue-900 min-h-screen flex flex-col items-center justify-center">
+    <div className="bg-gradient-to-b from-blue-600 to-blue-900 min-h-screen flex items-center justify-center">
       <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
-        <h2 className="text-3xl font-bold text-blue-600 text-center mb-6">Sign Up</h2>
-
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-black mb-2">Select Role</label>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="w-full p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-          >
-            <option value="Admin">Admin</option>
-            <option value="Recruiter">Recruiter</option>
-            <option value="Student">Student</option>
-          </select>
-        </div>
-
+        <h2 className="text-3xl font-semibold text-blue-700 text-center mb-6">Sign Up</h2>
         <form onSubmit={handleSignUp} className="space-y-6">
+          <div>
+            <label className="block mb-2 text-gray-700 font-medium">Select Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+            >
+              <option value="Admin">Admin</option>
+              <option value="Recruiter">Recruiter</option>
+              <option value="Student">Student</option>
+            </select>
+          </div>
+          {/* Conditional Role-Specific Inputs */}
           {role === "Admin" && (
             <>
-              <div>
-                <label className="block text-sm font-medium text-black">College Name</label>
-                <input
-                  type="text"
-                  name="collegeName"
-                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  onChange={handleInputChange}
-                  value={formData.collegeName}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-black">Address</label>
-                <input
-                  type="text"
-                  name="address"
-                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-black">Admin Name</label>
-                <input
-                  type="text"
-                  name="adminName"
-                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
+              <input
+                type="text"
+                name="collegeName"
+                placeholder="College Name"
+                onChange={handleInputChange}
+                className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                required
+              />
+              <input
+                type="text"
+                name="address"
+                placeholder="Address"
+                onChange={handleInputChange}
+                className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                required
+              />
             </>
           )}
-
+          {/* Recruiter */}
           {role === "Recruiter" && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-black">Company Name</label>
-                <input
-                  type="text"
-                  name="companyName"
-                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  onChange={handleInputChange}
-                  value={formData.companyName}
-                  required
-                />
-              </div>
-            </>
-          )}
-
-          {role === "Student" && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-black">Student Name</label>
-                <input
-                  type="text"
-                  name="studentName"
-                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  onChange={handleInputChange}
-                  value={formData.studentName}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-black">Institute ID</label>
-                <input
-                  type="text"
-                  name="instituteID"
-                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  onChange={handleInputChange}
-                  value={formData.instituteID}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-black">Age</label>
-                <input
-                  type="number"
-                  name="age"
-                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  onChange={handleInputChange}
-                  value={formData.age}
-                  required
-                />
-              </div>
-            </>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-black">Email</label>
-            <input
-              type="email"
-              name="email"
-              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-              onChange={handleInputChange}
-              value={formData.email}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-black">Phone</label>
             <input
               type="text"
-              name="phone"
-              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              name="companyName"
+              placeholder="Company Name"
               onChange={handleInputChange}
-              value={formData.phone}
+              className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
               required
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-black">Password</label>
-            <input
-              type="password"
-              name="password"
-              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-              onChange={handleInputChange}
-              value={formData.password}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-black">Confirm Password</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
-              onChange={handleInputChange}
-              value={formData.confirmPassword}
-              required
-            />
-          </div>
-
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
-          >
+          )}
+          {/* Student */}
+          {role === "Student" && (
+            <>
+              <input
+                type="text"
+                name="studentName"
+                placeholder="Student Name"
+                onChange={handleInputChange}
+                className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                required
+              />
+              <input
+                type="text"
+                name="instituteID"
+                placeholder="Institute ID"
+                onChange={handleInputChange}
+                className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                required
+              />
+            </>
+          )}
+          {/* Common Inputs */}
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            onChange={handleInputChange}
+            className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            required
+          />
+          <input
+            type="text"
+            name="phone"
+            placeholder="Phone"
+            onChange={handleInputChange}
+            className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            onChange={handleInputChange}
+            className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            required
+          />
+          <input
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm Password"
+            onChange={handleInputChange}
+            className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            required
+          />
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+          <button className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500">
             Sign Up
           </button>
         </form>
