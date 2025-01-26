@@ -125,7 +125,7 @@ export default function RecruiterPage() {
           type="text"
           value={instituteID}
           onChange={(e) => setInstituteID(e.target.value)}
-          className="w-full p-4 bg-white border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-4 bg-white border-2 border-gray-300 text-black rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
@@ -154,14 +154,14 @@ export default function RecruiterPage() {
           placeholder="Job Title"
           value={jobTitle}
           onChange={(e) => setJobTitle(e.target.value)}
-          className="w-full p-4 mb-4 bg-white border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-4 mb-4 bg-white border-2 border-gray-300 rounded-lg text-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
           required
         />
         <textarea
           placeholder="Job Description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full p-4 mb-4 bg-white border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-4 mb-4 bg-white border-2 border-gray-300 rounded-lg text-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
           required
         />
         <button type="submit" className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-all">
