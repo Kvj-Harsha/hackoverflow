@@ -29,9 +29,6 @@ export default function Home() {
           <Link href="/signup" className="px-8 py-3 bg-yellow-400 text-blue-900 font-semibold rounded-lg shadow-lg hover:bg-yellow-300">
             Get Started
           </Link>
-          <Link href="/features" className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg shadow-lg hover:bg-gray-200">
-            Learn More
-          </Link>
         </div>
       </main>
 
@@ -39,24 +36,30 @@ export default function Home() {
       <section className="bg-white py-16 px-8 text-center">
         <h3 className="text-3xl font-bold text-blue-600 mb-12">Features for Everyone</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <div className="p-8 border rounded-lg shadow-lg hover:shadow-xl">
-            <h4 className="text-xl font-bold text-blue-800 mb-4">Admin Panel</h4>
-            <p className="text-gray-600">
-              Manage colleges, placement activities, and monitor progress seamlessly.
-            </p>
-          </div>
-          <div className="p-8 border rounded-lg shadow-lg hover:shadow-xl">
-            <h4 className="text-xl font-bold text-blue-800 mb-4">Recruiter Panel</h4>
-            <p className="text-gray-600">
-              Post jobs, manage applications, and streamline recruitment effortlessly.
-            </p>
-          </div>
-          <div className="p-8 border rounded-lg shadow-lg hover:shadow-xl">
-            <h4 className="text-xl font-bold text-blue-800 mb-4">Student Panel</h4>
-            <p className="text-gray-600">
-              Build your profile, apply for jobs, and prepare for interviews all in one place.
-            </p>
-          </div>
+          <Link href="/admin" className="p-8 border rounded-lg shadow-lg hover:shadow-xl hover:bg-gray-100 transition">
+            <div>
+              <h4 className="text-xl font-bold text-blue-800 mb-4">Admin Panel</h4>
+              <p className="text-gray-600">
+                Manage colleges, placement activities, and monitor progress seamlessly.
+              </p>
+            </div>
+          </Link>
+          <Link href="/recruiter" className="p-8 border rounded-lg shadow-lg hover:shadow-xl hover:bg-gray-100 transition">
+            <div>
+              <h4 className="text-xl font-bold text-blue-800 mb-4">Recruiter Panel</h4>
+              <p className="text-gray-600">
+                Post jobs, manage applications, and streamline recruitment effortlessly.
+              </p>
+            </div>
+          </Link>
+          <Link href="/student" className="p-8 border rounded-lg shadow-lg hover:shadow-xl hover:bg-gray-100 transition">
+            <div>
+              <h4 className="text-xl font-bold text-blue-800 mb-4">Student Panel</h4>
+              <p className="text-gray-600">
+                Build your profile, apply for jobs, and prepare for interviews all in one place.
+              </p>
+            </div>
+          </Link>
         </div>
       </section>
 
