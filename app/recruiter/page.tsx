@@ -175,34 +175,34 @@ export default function RecruiterPage() {
             placeholder="Job Title"
             value={jobTitle}
             onChange={(e) => setJobTitle(e.target.value)}
-            className="block w-full p-3 mb-4 border rounded-lg"
+            className="block w-full text-black p-3 mb-4 border rounded-lg"
           />
           <textarea
             placeholder="Job Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="block w-full p-3 mb-4 border rounded-lg"
+            className="block w-full text-black p-3 mb-4 border rounded-lg"
           />
           <input
             type="text"
             placeholder="Eligibility Criteria"
             value={eligibility}
             onChange={(e) => setEligibility(e.target.value)}
-            className="block w-full p-3 mb-4 border rounded-lg"
+            className="block w-full text-black p-3 mb-4 border rounded-lg"
           />
           <input
             type="text"
             placeholder="Location"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="block w-full p-3 mb-4 border rounded-lg"
+            className="block w-full text-black p-3 mb-4 border rounded-lg"
           />
           <input
             type="text"
             placeholder="Salary"
             value={salary}
             onChange={(e) => setSalary(e.target.value)}
-            className="block w-full p-3 mb-4 border rounded-lg"
+            className="block w-full text-black p-3 mb-4 border rounded-lg"
           />
           <button
             type="submit"
