@@ -72,16 +72,15 @@ export default function SignIn() {
   };
 
   return (
-    <div className="bg-gradient-to-b from-green-600 to-green-900 min-h-screen flex flex-col items-center justify-center">
+    <div className="bg-gradient-to-b from-blue-400 to-blue-500 min-h-screen flex flex-col items-center justify-center">
       <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
-        <h2 className="text-3xl font-bold text-green-600 text-center mb-6">Sign In</h2>
-
+        <h2 className="text-3xl font-bold text-blue-500 text-center mb-6">Sign In</h2>
         <div className="mb-6">
           <label className="block text-sm font-medium text-black mb-2">Select Role</label>
           <select
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            className="w-full p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-green-600 focus:outline-none"
+            className="w-full p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
           >
             <option value="Admin">Admin</option>
             <option value="Student">Student</option>
@@ -95,7 +94,7 @@ export default function SignIn() {
             <input
               type="email"
               placeholder="Enter your email"
-              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-green-600 focus:outline-none"
+              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               value={email}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               required
@@ -106,7 +105,7 @@ export default function SignIn() {
             <input
               type="password"
               placeholder="Enter your password"
-              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-green-600 focus:outline-none"
+              className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               value={password}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               required
@@ -117,7 +116,7 @@ export default function SignIn() {
 
           <button
             type="submit"
-            className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
+            className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors duration-300"
           >
             Sign In
           </button>
