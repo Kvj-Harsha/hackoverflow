@@ -2,9 +2,16 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, addDoc, updateDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
 
-// Define types for the data structures
 interface Student {
   email: string;
   name: string;
@@ -14,6 +21,9 @@ interface Job {
   id: string;
   jobTitle: string;
   description: string;
+  eligibility: string;
+  location: string;
+  salary: string;
   instituteID: string;
 }
 
@@ -21,6 +31,7 @@ interface Application {
   id: string;
   studentEmail: string;
   status: string;
+  applicationFields: Record<string, string>;
 }
 
 export default function RecruiterPage() {
@@ -29,7 +40,11 @@ export default function RecruiterPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobTitle, setJobTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
+  const [eligibility, setEligibility] = useState<string>("");
+  const [location, setLocation] = useState<string>("");
+  const [salary, setSalary] = useState<string>("");
   const [applications, setApplications] = useState<Application[]>([]);
+  const [rounds, setRounds] = useState<string[]>([]);
   const [error, setError] = useState<string>("");
 
   const fetchStudents = async () => {
@@ -51,9 +66,19 @@ export default function RecruiterPage() {
     e.preventDefault();
     try {
       const jobsRef = collection(db, "jobs");
-      await addDoc(jobsRef, { jobTitle, description, instituteID });
+      await addDoc(jobsRef, {
+        jobTitle,
+        description,
+        eligibility,
+        location,
+        salary,
+        instituteID,
+      });
       setJobTitle("");
       setDescription("");
+      setEligibility("");
+      setLocation("");
+      setSalary("");
       fetchJobs();
     } catch (err) {
       setError("Failed to post job. Please try again.");
@@ -69,7 +94,10 @@ export default function RecruiterPage() {
         id: doc.id,
         jobTitle: doc.data().jobTitle,
         description: doc.data().description,
-        instituteID: doc.data().instituteID
+        eligibility: doc.data().eligibility,
+        location: doc.data().location,
+        salary: doc.data().salary,
+        instituteID: doc.data().instituteID,
       }));
       setJobs(jobsList);
     } catch (err) {
@@ -85,13 +113,15 @@ export default function RecruiterPage() {
       const applicationsList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         studentEmail: doc.data().studentEmail,
-        status: doc.data().status
+        status: doc.data().status,
+        applicationFields: doc.data().applicationFields || {},
       }));
       setApplications(applicationsList);
     } catch (err) {
       setError("Failed to fetch applications. Please try again.");
     }
   };
+
   const updateApplicationStatus = async (id: string, status: string) => {
     try {
       const applicationRef = doc(db, "applications", id);
@@ -100,6 +130,16 @@ export default function RecruiterPage() {
     } catch (err) {
       setError("Failed to update application. Please try again.");
     }
+  };
+
+  const handleRoundCompletion = (index: number) => {
+    const updatedRounds = [...rounds];
+    updatedRounds[index] += " (Completed)";
+    setRounds(updatedRounds);
+  };
+
+  const announceResults = () => {
+    alert("Results announced!");
   };
 
   useEffect(() => {
@@ -126,42 +166,7 @@ export default function RecruiterPage() {
         </div>
       </header>
 
-      {/* Analytics Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="p-6 bg-white rounded-lg shadow-md text-center">
-          <h2 className="text-xl font-semibold text-gray-800">Total Students</h2>
-          <p className="text-3xl font-bold text-blue-600">{students.length}</p>
-        </div>
-        <div className="p-6 bg-white rounded-lg shadow-md text-center">
-          <h2 className="text-xl font-semibold text-gray-800">Jobs Posted</h2>
-          <p className="text-3xl font-bold text-blue-600">{jobs.length}</p>
-        </div>
-        <div className="p-6 bg-white rounded-lg shadow-md text-center">
-          <h2 className="text-xl font-semibold text-gray-800">Applications</h2>
-          <p className="text-3xl font-bold text-blue-600">{applications.length}</p>
-        </div>
-      </div>
-
-      {/* Students List */}
-      <section className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Students</h2>
-        <div className="bg-white rounded-lg shadow-md p-6">
-          {students.length > 0 ? (
-            <ul className="space-y-3">
-              {students.map((student) => (
-                <li key={student.email} className="flex justify-between items-center">
-                  <span>{student.name}</span>
-                  <span className="text-gray-500">{student.email}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">No students found.</p>
-          )}
-        </div>
-      </section>
-
-      {/* Post Job Section */}
+      {/* Job Posting */}
       <section className="mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Post a Job</h2>
         <form onSubmit={postJob} className="bg-white rounded-lg shadow-md p-6">
@@ -178,6 +183,27 @@ export default function RecruiterPage() {
             onChange={(e) => setDescription(e.target.value)}
             className="block w-full p-3 mb-4 border rounded-lg"
           />
+          <input
+            type="text"
+            placeholder="Eligibility Criteria"
+            value={eligibility}
+            onChange={(e) => setEligibility(e.target.value)}
+            className="block w-full p-3 mb-4 border rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="block w-full p-3 mb-4 border rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Salary"
+            value={salary}
+            onChange={(e) => setSalary(e.target.value)}
+            className="block w-full p-3 mb-4 border rounded-lg"
+          />
           <button
             type="submit"
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -187,7 +213,7 @@ export default function RecruiterPage() {
         </form>
       </section>
 
-      {/* Applications List */}
+      {/* Manage Applications */}
       <section>
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Applications</h2>
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -198,10 +224,10 @@ export default function RecruiterPage() {
                   <span>{app.studentEmail}</span>
                   <div>
                     <button
-                      onClick={() => updateApplicationStatus(app.id, "Accepted")}
+                      onClick={() => updateApplicationStatus(app.id, "Shortlisted")}
                       className="px-3 py-1 bg-green-500 text-white rounded-lg mr-2"
                     >
-                      Accept
+                      Shortlist
                     </button>
                     <button
                       onClick={() => updateApplicationStatus(app.id, "Rejected")}
@@ -217,6 +243,31 @@ export default function RecruiterPage() {
             <p className="text-gray-500">No applications found.</p>
           )}
         </div>
+      </section>
+
+      {/* Recruitment Rounds */}
+      <section className="mt-6">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Recruitment Process</h2>
+        {rounds.map((round, index) => (
+          <div
+            key={index}
+            className="flex justify-between items-center bg-white p-4 mb-2 rounded-lg shadow-md"
+          >
+            <span>{round}</span>
+            <button
+              onClick={() => handleRoundCompletion(index)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+            >
+              Mark as Completed
+            </button>
+          </div>
+        ))}
+        <button
+          onClick={announceResults}
+          className="mt-4 px-6 py-3 bg-green-600 text-white rounded-lg"
+        >
+          Announce Results
+        </button>
       </section>
 
       {error && <p className="text-red-500 mt-4">{error}</p>}
