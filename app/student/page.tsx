@@ -154,7 +154,7 @@ export default function StudentDashboardPage() {
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as OrderByDirection)}
-              className="px-4 py-2 bg-white border-2 border-gray-300 rounded-md shadow-md focus:ring-2 focus:ring-blue-400"
+              className="px-4 py-2 bg-white border-2 border-gray-300 text-black rounded-md shadow-md focus:ring-2 focus:ring-blue-400"
             >
               <option value="asc">Sort by Date (Oldest)</option>
               <option value="desc">Sort by Date (Newest)</option>
