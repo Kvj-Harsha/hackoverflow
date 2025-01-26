@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
@@ -39,7 +40,7 @@ export default function SignUp() {
   const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const { email, collegeName, password, confirmPassword, studentName, instituteID, ...rest } = formData;
+    const { email, collegeName, password, confirmPassword, studentName, instituteID, companyName, ...rest } = formData;
 
     if (role === "Admin" && !collegeName) {
       setError("College name is required.");
@@ -70,14 +71,17 @@ export default function SignUp() {
         }
 
         router.push("/admin"); // Redirect to admin page
-
       } else if (role === "Recruiter") {
+        if (!companyName) {
+          setError("Company name is required for Recruiter.");
+          return;
+        }
+
         if (email) {
-          await setDoc(doc(db, "recruiters", email), { ...rest, email, role, password, posts: "", instituteIDs: "" });
+          await setDoc(doc(db, "recruiters", email), { ...rest, email, companyName, role, password });
         }
 
         router.push("/recruiter"); // Redirect to recruiter page
-
       } else if (role === "Student") {
         if (!instituteID) {
           setError("Institute ID is required for Student.");
@@ -170,6 +174,22 @@ export default function SignUp() {
                   name="adminName"
                   className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </>
+          )}
+
+          {role === "Recruiter" && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-black">Company Name</label>
+                <input
+                  type="text"
+                  name="companyName"
+                  className="w-full mt-1 p-3 bg-gray-50 text-black border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  onChange={handleInputChange}
+                  value={formData.companyName}
                   required
                 />
               </div>

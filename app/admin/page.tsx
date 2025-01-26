@@ -1,123 +1,193 @@
 "use client";
-import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { db } from "./../../lib/firebase";
+import { collection, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+
+// Define types for student and recruiter objects
+interface Student {
+  id: string;
+  name: string;
+  email: string;
+  verified: boolean;
+  instituteId: string; // Assuming this is a field to link students to an institute
+}
 
 interface Recruiter {
   id: string;
   name: string;
   email: string;
-  verified?: boolean;
-}
-
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  verified?: boolean;
+  verified: boolean;
 }
 
 export default function AdminDashboard() {
-  const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
+  const [user, setUser] = useState<any>(null); // user can be typed more specifically if needed
+  const router = useRouter();
 
   useEffect(() => {
-    fetchRecruiters();
-    fetchStudents();
-  }, []);
+    // Authentication check
+    const auth = getAuth();
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        router.push("/signin"); // Redirect to login page if not authenticated
+      }
+    });
 
-  const fetchRecruiters = async () => {
-    const recruitersCollection = collection(db, "recruiters");
-    const snapshot = await getDocs(recruitersCollection);
-    setRecruiters(
-      snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Recruiter))
-    );
-  };
+    const fetchData = async () => {
+      const studentsSnapshot = await getDocs(collection(db, "students"));
+      const recruitersSnapshot = await getDocs(collection(db, "recruiters"));
 
-  const fetchStudents = async () => {
-    const studentsCollection = collection(db, "students");
-    const snapshot = await getDocs(studentsCollection);
-    setStudents(
-      snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Student))
-    );
-  };
+      setStudents(
+        studentsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Student[] // Explicitly typing the data
+      );
+      setRecruiters(
+        recruitersSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Recruiter[] // Explicitly typing the data
+      );
+    };
+    fetchData();
+  }, [router]);
 
   const approveStudent = async (studentId: string) => {
     const studentDoc = doc(db, "students", studentId);
     await updateDoc(studentDoc, { verified: true });
-    fetchStudents(); // Refresh data
+    setStudents((prev) =>
+      prev.map((student) =>
+        student.id === studentId ? { ...student, verified: true } : student
+      )
+    );
+  };
+
+  const rejectStudent = async (studentId: string) => {
+    const studentDoc = doc(db, "students", studentId);
+    await updateDoc(studentDoc, { verified: false });
+    setStudents((prev) =>
+      prev.map((student) =>
+        student.id === studentId ? { ...student, verified: false } : student
+      )
+    );
+  };
+
+  const removeStudent = async (studentId: string) => {
+    const studentDoc = doc(db, "students", studentId);
+    await deleteDoc(studentDoc);
+    setStudents((prev) => prev.filter((student) => student.id !== studentId));
   };
 
   const approveRecruiter = async (recruiterId: string) => {
     const recruiterDoc = doc(db, "recruiters", recruiterId);
     await updateDoc(recruiterDoc, { verified: true });
-    fetchRecruiters(); // Refresh data
+    setRecruiters((prev) =>
+      prev.map((recruiter) =>
+        recruiter.id === recruiterId ? { ...recruiter, verified: true } : recruiter
+      )
+    );
   };
 
+  const signOutUser = async () => {
+    const auth = getAuth();
+    await signOut(auth);
+    router.push("/signin"); // Redirect to login page after sign out
+  };
+
+  // Filter students based on the logged-in user's institute ID
+  const instituteId = user?.uid; // Assuming the user's UID is the institute ID for simplicity
+  const filteredStudents = students.filter(
+    (student) => student.instituteId === instituteId
+  );
+
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <header className="mb-8">
-        <h1 className="text-4xl font-extrabold text-gray-900">Admin Dashboard</h1>
-      </header>
-      <main className="space-y-8">
-        <section>
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">Dashboard Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-700">Total Recruiters</h3>
-              <p className="text-2xl font-bold text-gray-900">{recruiters.length}</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-700">Total Students</h3>
-              <p className="text-2xl font-bold text-gray-900">{students.length}</p>
-            </div>
-          </div>
-        </section>
+    <div className="bg-gray-50 min-h-screen p-8 relative">
+      <button
+        onClick={signOutUser}
+        className="absolute top-8 right-8 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+      >
+        Sign Out
+      </button>
 
-        <section>
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">Manage Recruiters</h2>
-          <ul className="bg-white p-6 rounded-lg shadow-lg">
-            {recruiters.map((recruiter) => (
-              <li
-                key={recruiter.id}
-                className="flex justify-between items-center py-3 border-b last:border-b-0"
-              >
-                <span className="text-gray-800 font-medium">
-                  {recruiter.name} ({recruiter.email})
-                </span>
-                <button
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                  onClick={() => approveRecruiter(recruiter.id)}
-                >
-                  Approve
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+      <h1 className="text-4xl font-bold mb-8 text-gray-800">Admin Dashboard</h1>
 
-        <section>
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">Manage Students</h2>
-          <ul className="bg-white p-6 rounded-lg shadow-lg">
-            {students.map((student) => (
-              <li
-                key={student.id}
-                className="flex justify-between items-center py-3 border-b last:border-b-0"
-              >
-                <span className="text-gray-800 font-medium">
-                  {student.name} ({student.email})
-                </span>
-                <button
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                  onClick={() => approveStudent(student.id)}
+      <div className="space-y-8">
+        {/* Pending Recruiter Approvals */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-700">Pending Recruiter Approvals</h2>
+          {recruiters.filter((r) => !r.verified).length > 0 ? (
+            recruiters.map((recruiter) =>
+              !recruiter.verified ? (
+                <div
+                  key={recruiter.id}
+                  className="flex justify-between items-center mb-4 p-4 border border-gray-300 rounded-lg shadow-sm"
                 >
-                  Approve
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </main>
+                  <div>
+                    <p className="text-lg font-medium text-gray-800">{recruiter.name}</p>
+                    <p className="text-sm text-gray-600">{recruiter.email}</p>
+                  </div>
+                  <button
+                    onClick={() => approveRecruiter(recruiter.id)}
+                    className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
+                  >
+                    Approve
+                  </button>
+                </div>
+              ) : null
+            )
+          ) : (
+            <p className="text-gray-600">No pending recruiter approvals.</p>
+          )}
+        </div>
+
+        {/* Pending Student Approvals */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-700">Pending Student Approvals</h2>
+          {filteredStudents.filter((s) => !s.verified).length > 0 ? (
+            filteredStudents.map((student) =>
+              !student.verified ? (
+                <div
+                  key={student.id}
+                  className="flex justify-between items-center mb-4 p-4 border border-gray-300 rounded-lg shadow-sm"
+                >
+                  <div>
+                    <p className="text-lg font-medium text-gray-800">{student.name}</p>
+                    <p className="text-sm text-gray-600">{student.email}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => approveStudent(student.id)}
+                      className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => rejectStudent(student.id)}
+                      className="bg-yellow-600 text-white px-6 py-2 rounded-md hover:bg-yellow-700 transition-colors"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      onClick={() => removeStudent(student.id)}
+                      className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : null
+            )
+          ) : (
+            <p className="text-gray-600">No pending student approvals.</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

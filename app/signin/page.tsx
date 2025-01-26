@@ -2,8 +2,9 @@
 
 import { useState, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function SignIn() {
   const [role, setRole] = useState("Admin"); // Default role
@@ -23,9 +24,23 @@ export default function SignIn() {
 
     try {
       // Authenticate user using Firebase Authentication
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      // Redirect based on role
+      // Fetch user role from Firestore
+      const userDocRef = doc(db, `${role.toLowerCase()}s`, email); // Use role to locate the collection
+      const userDocSnapshot = await getDoc(userDocRef);
+
+      if (!userDocSnapshot.exists()) {
+        throw new Error(`No ${role} profile found for this email.`);
+      }
+
+      const userData = userDocSnapshot.data();
+      if (userData?.role !== role) {
+        throw new Error("Role mismatch. Please select the correct role.");
+      }
+
+      // Redirect to respective profile page
       switch (role) {
         case "Admin":
           router.push("/admin");
